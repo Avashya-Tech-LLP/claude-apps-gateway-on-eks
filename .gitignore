@@ -1,0 +1,31 @@
+# Secrets — never commit
+creds/
+requirement-docs/
+*_accessKeys.csv
+*_credentials.csv
+*.csv
+
+# Terraform state (contains secrets in plaintext)
+Terraform/terraform.tfstate
+Terraform/terraform.tfstate.backup
+Terraform/**/.terraform/
+Terraform/**/*.tfplan
+Terraform/terraform_output.txt
+
+# Terraform local backend lock
+.terraform.lock.hcl
+
+# Claude config backups (contain tokens and local paths)
+backups/
+
+# Claude Code session data
+.claude/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Scratch files
+*.pdf
+scripts/terraform_output.txt
+Explore-logs-*.json

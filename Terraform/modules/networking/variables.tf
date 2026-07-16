@@ -1,0 +1,2 @@
+variable "default" {}
+variable "networking" {}

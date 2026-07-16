@@ -1,0 +1,422 @@
+{
+  "title": "Claude Gateway \u2014 Usage Monitor",
+  "uid": "claude-gw-usage",
+  "tags": [
+    "claude",
+    "gateway",
+    "gateway"
+  ],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "container",
+        "label": "Container",
+        "type": "custom",
+        "query": "gateway-access,claude-gateway",
+        "options": [
+          {
+            "text": "gateway-access",
+            "value": "gateway-access",
+            "selected": false
+          },
+          {
+            "text": "claude-gateway",
+            "value": "claude-gateway",
+            "selected": false
+          }
+        ],
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "allValue": "gateway-access|claude-gateway",
+        "multi": false,
+        "hide": 0,
+        "description": "Filter log panel by container stream"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total Requests",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" [5m]))",
+          "legendFormat": "Requests"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg Latency",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "avg(avg_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" | unwrap ms [5m]))",
+          "legendFormat": "Avg ms"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Users",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "count(sum by (email)(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" [1h])))",
+          "legendFormat": "Users"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Error Rate",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" | status > 399 [5m])) / sum(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" [5m])) * 100 or vector(0)",
+          "legendFormat": "Error %"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Requests per User (over time)",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 14,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum by (email)(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" [5m]))",
+          "legendFormat": "{{email}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "piechart",
+      "title": "Requests per User (total)",
+      "gridPos": {
+        "x": 14,
+        "y": 4,
+        "w": 10,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "pieType": "pie",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum by (email)(count_over_time({job=\"claude-gateway\"} | json | evt=\"inference\" [1h]))",
+          "legendFormat": "{{email}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "piechart",
+      "title": "Surface Breakdown",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 10,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum by (surface)(count_over_time({job=\"gateway-access\"} | json | path=\"/v1/messages\" | surface != \"healthcheck\" [1h]))",
+          "legendFormat": "{{surface}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Surface Usage Over Time",
+      "gridPos": {
+        "x": 10,
+        "y": 12,
+        "w": 14,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "sum by (surface)(count_over_time({job=\"gateway-access\"} | json | path=\"/v1/messages\" | surface != \"healthcheck\" [5m]))",
+          "legendFormat": "{{surface}}"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Complete Logs",
+      "description": "Use 'Container' dropdown to filter by stream. Each request produces 2 lines: nginx access log + gateway inference event.",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 14
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "expr": "{job=~\"$container\"} | json",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    }
+  ]
+}
