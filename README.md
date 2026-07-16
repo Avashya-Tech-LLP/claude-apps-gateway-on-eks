@@ -12,30 +12,33 @@ Deploy Anthropic's [Claude Apps Gateway](https://docs.anthropic.com/en/docs/clau
 ## What this deploys
 
 ```
-Developer Mac
-  Claude Code CLI  ─────────────────────────────────┐
-  Claude Desktop   ─────────────────────────────────┤  HTTPS :443
-                                                     ▼
-                                              AWS ALB (internet-facing)
-                                              ACM cert (DNS-validated)
-                                                     │
-                                       ┌─────────────▼─────────────┐
-                                       │        EKS Cluster        │
-                                       │     claude-system ns      │
-                                       │                           │
-                                       │  ┌────────────────────┐   │
-                                       │  │  Gateway Pod       │   │
-                                       │  │  nginx :8080       │   │
-                                       │  │  → ttl-proxy :8082 │   │
-                                       │  │    [optional]      │   │
-                                       │  │  → gateway :8081   │   │
-                                       │  │  → otel [optional] │   │
-                                       │  └────────────────────┘   │
-                                       │  Postgres  Loki  Grafana  │
-                                       └───────────────────────────┘
-                                                     │
-                                              AWS Bedrock
-                                              (via IRSA)
+┌──────────────────────────────┐
+│  Developer Computer          │
+│  Claude Code CLI ────────────┼──────┐
+│  Claude Desktop  ────────────┼──────┤ HTTPS :443 (ACM cert)
+└──────────────────────────────┘      │
+                                      ▼
+                            ┌─────────────────────┐
+                            │      AWS ALB        │
+                            │  internet-facing    │
+                            └──────────┬──────────┘
+                                       │
+              ┌────────────────────────▼────────────────────────┐
+              │       EKS Cluster  ·  (claude-system ns)        │
+              │                                                 │
+              │  ┌──────────────────────────────────────────┐   │
+              │  │  Gateway Pod                             │   │
+              │  │  nginx          :8080                    │   │
+              │  │  ttl-proxy      :8082  [optional]        │   │
+              │  │  gateway        :8081                    │   │
+              │  │  otel-collector :4318  [optional]        │   │
+              │  └──────────────────────────────────────────┘   │
+              │                                                 │
+              │         Postgres     Loki     Grafana           │
+              └────────────────────────┬────────────────────────┘
+                                       │ IRSA
+                                       ▼
+                                  AWS Bedrock
 ```
 
 **Key design decisions:**
