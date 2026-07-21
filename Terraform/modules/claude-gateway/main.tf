@@ -31,6 +31,8 @@ locals {
   ttl_proxy_enabled  = lookup(var.claude_gateway, "ttl_proxy_enabled", true)
 
   cert_manager_enabled = false
+
+  loki_s3_bucket = lookup(var.claude_gateway, "loki_s3_bucket", "${var.default["env"]}-${var.default["project"]}-loki-chunks")
 }
 
 # ─── TLS: Self-signed fallback certificate → ACM ─────────────────────────────
@@ -404,6 +406,93 @@ YAML
 
 # ─── Loki (log storage) ───────────────────────────────────────────────────────
 
+# ─── Loki S3 backend: IAM role, policy, bucket, service account ───────────────
+
+resource "aws_iam_role" "loki" {
+  count = local.monitoring_enabled ? 1 : 0
+  name  = "${var.default["env"]}-${var.default["project"]}-loki-irsa"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = var.oidc_provider_arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${local.oidc_id}:sub" = "system:serviceaccount:${local.namespace}:loki"
+          "${local.oidc_id}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "loki_s3" {
+  count = local.monitoring_enabled ? 1 : 0
+  name  = "loki-s3-access"
+  role  = aws_iam_role.loki[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ]
+      Resource = [
+        "arn:aws:s3:::${local.loki_s3_bucket}",
+        "arn:aws:s3:::${local.loki_s3_bucket}/*"
+      ]
+    }]
+  })
+}
+
+resource "aws_s3_bucket" "loki" {
+  count  = local.monitoring_enabled ? 1 : 0
+  bucket = local.loki_s3_bucket
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "loki" {
+  count  = local.monitoring_enabled ? 1 : 0
+  bucket = aws_s3_bucket.loki[0].id
+
+  block_public_acls       = true
+  ignore_public_acls      = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "loki" {
+  count  = local.monitoring_enabled ? 1 : 0
+  bucket = aws_s3_bucket.loki[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+    bucket_key_enabled = true
+  }
+}
+
+resource "kubernetes_service_account" "loki" {
+  count = local.monitoring_enabled ? 1 : 0
+  metadata {
+    name      = "loki"
+    namespace = kubernetes_namespace.claude_system.metadata[0].name
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.loki[0].arn
+    }
+  }
+}
+
 resource "kubernetes_config_map" "loki" {
   count = local.monitoring_enabled ? 1 : 0
   metadata {
@@ -438,7 +527,7 @@ schema_config:
   configs:
   - from: 2024-01-01
     store: tsdb
-    object_store: filesystem
+    object_store: s3
     schema: v13
     index:
       prefix: index_
@@ -447,10 +536,14 @@ storage_config:
   tsdb_shipper:
     active_index_directory: /loki/index
     cache_location: /loki/index_cache
-  filesystem:
-    directory: /loki/chunks
+  aws:
+    s3: s3://${data.aws_region.current.region}/${local.loki_s3_bucket}
+    region: ${data.aws_region.current.region}
+    s3forcepathstyle: false
 compactor:
   working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: s3
 limits_config:
   retention_period: 720h
   shard_streams:
@@ -492,6 +585,8 @@ resource "kubernetes_deployment" "loki" {
       metadata { labels = { app = "loki" } }
 
       spec {
+        service_account_name = kubernetes_service_account.loki[count.index].metadata[0].name
+
         security_context {
           run_as_non_root = true
           run_as_user     = 10001
@@ -575,7 +670,12 @@ resource "kubernetes_deployment" "loki" {
     }
   }
 
-  depends_on = [kubernetes_persistent_volume_claim_v1.loki_data]
+  depends_on = [
+    kubernetes_persistent_volume_claim_v1.loki_data,
+    kubernetes_service_account.loki,
+    aws_iam_role_policy.loki_s3,
+    aws_s3_bucket.loki,
+  ]
 }
 
 resource "kubernetes_service" "loki" {
