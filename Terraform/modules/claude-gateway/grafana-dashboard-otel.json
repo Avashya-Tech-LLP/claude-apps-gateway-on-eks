@@ -1,0 +1,257 @@
+{
+  "title": "Claude Code — OTel Metrics, Logs & Traces",
+  "uid": "claude-otel-signals",
+  "tags": ["claude", "otel", "metrics", "traces"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "user",
+        "label": "User",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "query": "label_values(claude_code_claude_code_session_count_total, user_email)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "refresh": 2,
+        "hide": 0
+      },
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "query": "label_values(claude_code_claude_code_token_usage_total, model)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "refresh": 2,
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+
+    { "id": 100, "type": "text", "title": "", "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "options": { "mode": "markdown", "content": "## Metrics" } },
+
+    {
+      "id": 1, "type": "stat", "title": "Total Sessions",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_session_count_total{user_email=~\"$user\"})", "legendFormat": "Sessions" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Total Tokens",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_token_usage_total{user_email=~\"$user\", model=~\"$model\"})", "legendFormat": "Tokens" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Total Cost (USD)",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4, "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_cost_usage_total{user_email=~\"$user\", model=~\"$model\"})", "legendFormat": "Cost" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Lines of Code",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_lines_of_code_count_total{user_email=~\"$user\"})", "legendFormat": "LOC" }]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Commits",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "yellow" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_commit_count_total{user_email=~\"$user\"})", "legendFormat": "Commits" }]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Pull Requests",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "red" } } },
+      "targets": [{ "refId": "A", "expr": "sum(claude_code_claude_code_pull_request_count_total{user_email=~\"$user\"})", "legendFormat": "PRs" }]
+    },
+
+    {
+      "id": 10, "type": "timeseries", "title": "Token Usage Over Time (by User)",
+      "gridPos": { "x": 0, "y": 5, "w": 14, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (user_email)(rate(claude_code_claude_code_token_usage_total{user_email=~\"$user\", model=~\"$model\"}[5m]))", "legendFormat": "{{user_email}}" }
+      ]
+    },
+    {
+      "id": 11, "type": "piechart", "title": "Token Split (Input vs Output)",
+      "gridPos": { "x": 14, "y": 5, "w": 10, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (type)(claude_code_claude_code_token_usage_total{user_email=~\"$user\", model=~\"$model\"})", "legendFormat": "{{type}}" }
+      ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Cost Over Time (by Model)",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (model)(rate(claude_code_claude_code_cost_usage_total{user_email=~\"$user\", model=~\"$model\"}[5m]))", "legendFormat": "{{model}}" }
+      ]
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "Active Time (by User)",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (user_email)(claude_code_claude_code_active_time_total{user_email=~\"$user\"})", "legendFormat": "{{user_email}}" }
+      ]
+    },
+    {
+      "id": 14, "type": "bargauge", "title": "Code Edit Decisions (Accept vs Reject)",
+      "gridPos": { "x": 0, "y": 21, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] }, "displayMode": "gradient" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "accepted" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "rejected" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum by (decision)(claude_code_claude_code_code_edit_tool_decision_total{user_email=~\"$user\"})", "legendFormat": "{{decision}}" }
+      ]
+    },
+    {
+      "id": 15, "type": "bargauge", "title": "Lines of Code Added vs Removed",
+      "gridPos": { "x": 12, "y": 21, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] }, "displayMode": "gradient" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "added" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "removed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum by (type)(claude_code_claude_code_lines_of_code_count_total{user_email=~\"$user\"})", "legendFormat": "{{type}}" }
+      ]
+    },
+
+    { "id": 200, "type": "text", "title": "", "gridPos": { "x": 0, "y": 27, "w": 24, "h": 1 },
+      "options": { "mode": "markdown", "content": "## Logs" } },
+
+    {
+      "id": 20, "type": "stat", "title": "Inference Events (5m)",
+      "gridPos": { "x": 0, "y": 28, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({service_name=\"claude-code\", event_name=\"inference\"}[5m]))", "legendFormat": "Events" }]
+    },
+    {
+      "id": 21, "type": "stat", "title": "Tool Uses (5m)",
+      "gridPos": { "x": 6, "y": 28, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({service_name=\"claude-code\", event_name=\"tool_use\"}[5m]))", "legendFormat": "Tool Uses" }]
+    },
+    {
+      "id": 22, "type": "stat", "title": "Active Users (1h)",
+      "gridPos": { "x": 12, "y": 28, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [{ "refId": "A", "expr": "count(count by (user_email)(count_over_time({service_name=\"claude-code\"}[1h])))", "legendFormat": "Users" }]
+    },
+    {
+      "id": 23, "type": "stat", "title": "Unique Models (1h)",
+      "gridPos": { "x": 18, "y": 28, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "targets": [{ "refId": "A", "expr": "count(count by (model)(count_over_time({service_name=\"claude-code\", event_name=\"inference\"}[1h])))", "legendFormat": "Models" }]
+    },
+
+    {
+      "id": 24, "type": "timeseries", "title": "Inference Events Over Time (by User)",
+      "gridPos": { "x": 0, "y": 32, "w": 14, "h": 8 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [{ "refId": "A", "expr": "sum by (user_email)(count_over_time({service_name=\"claude-code\", event_name=\"inference\"}[5m]))", "legendFormat": "{{user_email}}" }]
+    },
+    {
+      "id": 25, "type": "piechart", "title": "Tool Usage Breakdown",
+      "gridPos": { "x": 14, "y": 32, "w": 10, "h": 8 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [{ "refId": "A", "expr": "sum by (tool_name)(count_over_time({service_name=\"claude-code\", event_name=\"tool_use\"}[1h]))", "legendFormat": "{{tool_name}}" }]
+    },
+
+    {
+      "id": 26, "type": "logs", "title": "Inference Logs (with prompts & responses)",
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 10 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [{ "refId": "A", "expr": "{service_name=\"claude-code\", event_name=\"inference\"}", "legendFormat": "" }]
+    },
+    {
+      "id": 27, "type": "logs", "title": "Tool Use Logs",
+      "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [{ "refId": "A", "expr": "{service_name=\"claude-code\", event_name=\"tool_use\"}", "legendFormat": "" }]
+    },
+
+    { "id": 300, "type": "text", "title": "", "gridPos": { "x": 0, "y": 58, "w": 24, "h": 1 },
+      "options": { "mode": "markdown", "content": "## Traces (spans stored in Loki)" } },
+
+    {
+      "id": 30, "type": "timeseries", "title": "Span Count Over Time",
+      "gridPos": { "x": 0, "y": 59, "w": 14, "h": 8 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" } },
+      "targets": [{ "refId": "A", "expr": "sum by (user_email)(count_over_time({service_name=\"claude-code\"} | json | __error__=\"\" | span_id != \"\" [5m]))", "legendFormat": "{{user_email}}" }]
+    },
+    {
+      "id": 31, "type": "piechart", "title": "Spans by Model",
+      "gridPos": { "x": 14, "y": 59, "w": 10, "h": 8 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [{ "refId": "A", "expr": "sum by (model)(count_over_time({service_name=\"claude-code\"} | json | __error__=\"\" | span_id != \"\" [1h]))", "legendFormat": "{{model}}" }]
+    },
+
+    {
+      "id": 32, "type": "logs", "title": "Raw Trace Spans",
+      "gridPos": { "x": 0, "y": 67, "w": 24, "h": 10 },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [{ "refId": "A", "expr": "{service_name=\"claude-code\"} | json | span_id != \"\"", "legendFormat": "" }]
+    }
+  ]
+}

@@ -795,7 +795,8 @@ resource "kubernetes_config_map" "grafana_dashboard_claude" {
   }
 
   data = {
-    "claude-gateway.json" = file("${path.module}/grafana-dashboard.json")
+    "claude-gateway.json"      = file("${path.module}/grafana-dashboard.json")
+    "claude-otel-signals.json" = file("${path.module}/grafana-dashboard-otel.json")
   }
 }
 
